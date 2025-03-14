@@ -247,8 +247,6 @@ class Bkash
     /**
      * Query payment status
      *
-     * @param string $paymentId
-     * @return array
      * @throws PaymentQueryException
      */
     public function queryPayment(string $paymentId): array
@@ -293,15 +291,13 @@ class Bkash
                 throw $e;
             }
 
-            throw new PaymentQueryException('Failed to query payment status: ' . $e->getMessage());
+            throw new PaymentQueryException('Failed to query payment status: '.$e->getMessage());
         }
     }
 
     /**
      * Refund a payment
      *
-     * @param array $data
-     * @return array
      * @throws RefundException
      */
     public function refundPayment(array $data): array
@@ -356,8 +352,7 @@ class Bkash
                 throw $e;
             }
 
-            throw new RefundException('Failed to refund payment: ' . $e->getMessage());
+            throw new RefundException('Failed to refund payment: '.$e->getMessage());
         }
     }
-
 }

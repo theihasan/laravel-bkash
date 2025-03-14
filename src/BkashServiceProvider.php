@@ -19,7 +19,7 @@ class BkashServiceProvider extends PackageServiceProvider
             ->hasConfigFile()
             ->hasMigrations([
                 'create_bkash_payments_table',
-                'create_bkash_refunds_table'
+                'create_bkash_refunds_table',
             ])
             ->hasRoute('web');
     }
