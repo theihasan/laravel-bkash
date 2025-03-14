@@ -2,30 +2,25 @@
 
 namespace Ihasan\Bkash;
 
+use Ihasan\Bkash\Exceptions\BkashException;
 use Ihasan\Bkash\Exceptions\PaymentCreateException;
 use Ihasan\Bkash\Exceptions\PaymentExecuteException;
+use Ihasan\Bkash\Exceptions\PaymentQueryException;
 use Ihasan\Bkash\Exceptions\RefreshTokenException;
+use Ihasan\Bkash\Exceptions\RefundException;
 use Ihasan\Bkash\Exceptions\TokenGenerationException;
 use Ihasan\Bkash\Models\BkashPayment;
+use Ihasan\Bkash\Models\BkashRefund;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 
 class Bkash
 {
-    protected string $baseUrl;
-
     protected array $credentials;
-
-    protected string $version;
 
     public function __construct()
     {
-        $this->baseUrl = config('bkash.sandbox')
-            ? config('bkash.sandbox_base_url')
-            : config('bkash.live_base_url');
-
         $this->credentials = config('bkash.credentials');
-        $this->version = config('bkash.version');
     }
 
     /**
@@ -42,13 +37,15 @@ class Bkash
         }
 
         try {
-            $response = Http::withHeaders([
-                'username' => $this->credentials['username'],
-                'password' => $this->credentials['password'],
-            ])->post("{$this->baseUrl}/{$this->version}/tokenized/checkout/token/grant", [
-                'app_key' => $this->credentials['app_key'],
-                'app_secret' => $this->credentials['app_secret'],
-            ]);
+            $response = Http::bkash()
+                ->withHeaders([
+                    'username' => $this->credentials['username'],
+                    'password' => $this->credentials['password'],
+                ])
+                ->post('token/grant', [
+                    'app_key' => $this->credentials['app_key'],
+                    'app_secret' => $this->credentials['app_secret'],
+                ]);
 
             $data = $response->json();
 
@@ -92,14 +89,16 @@ class Bkash
         }
 
         try {
-            $response = Http::withHeaders([
-                'username' => $this->credentials['username'],
-                'password' => $this->credentials['password'],
-            ])->post("{$this->baseUrl}/{$this->version}/tokenized/checkout/token/refresh", [
-                'app_key' => $this->credentials['app_key'],
-                'app_secret' => $this->credentials['app_secret'],
-                'refresh_token' => $refreshToken,
-            ]);
+            $response = Http::bkash()
+                ->withHeaders([
+                    'username' => $this->credentials['username'],
+                    'password' => $this->credentials['password'],
+                ])
+                ->post('token/refresh', [
+                    'app_key' => $this->credentials['app_key'],
+                    'app_secret' => $this->credentials['app_secret'],
+                    'refresh_token' => $refreshToken,
+                ]);
 
             $data = $response->json();
 
@@ -153,10 +152,8 @@ class Bkash
                 $payload['agreementID'] = $data['agreement_id'];
             }
 
-            $response = Http::withHeaders([
-                'Authorization' => $token,
-                'X-APP-Key' => $this->credentials['app_key'],
-            ])->post("{$this->baseUrl}/{$this->version}/tokenized/checkout/create", $payload);
+            $response = Http::bkash($token)
+                ->post('create', $payload);
 
             $responseData = $response->json();
 
@@ -200,17 +197,14 @@ class Bkash
         try {
             $token = $this->getToken();
 
-            $response = Http::withHeaders([
-                'Authorization' => $token,
-                'X-APP-Key' => $this->credentials['app_key'],
-            ])->post("{$this->baseUrl}/{$this->version}/tokenized/checkout/execute", [
-                'paymentID' => $paymentId,
-            ]);
+            $response = Http::bkash($token)
+                ->post('execute', [
+                    'paymentID' => $paymentId,
+                ]);
 
             $data = $response->json();
 
             if ($response->successful() && isset($data['trxID'])) {
-
                 $payment = BkashPayment::where('payment_id', $paymentId)->first();
 
                 if ($payment) {
@@ -247,8 +241,6 @@ class Bkash
     /**
      * Query payment status
      *
-     * @param string $paymentId
-     * @return array
      * @throws PaymentQueryException
      */
     public function queryPayment(string $paymentId): array
@@ -256,12 +248,10 @@ class Bkash
         try {
             $token = $this->getToken();
 
-            $response = Http::withHeaders([
-                'Authorization' => $token,
-                'X-APP-Key' => $this->credentials['app_key'],
-            ])->post("{$this->baseUrl}/{$this->version}/tokenized/checkout/payment/status", [
-                'paymentID' => $paymentId,
-            ]);
+            $response = Http::bkash($token)
+                ->post('payment/status', [
+                    'paymentID' => $paymentId,
+                ]);
 
             $data = $response->json();
 
@@ -300,8 +290,6 @@ class Bkash
     /**
      * Refund a payment
      *
-     * @param array $data
-     * @return array
      * @throws RefundException
      */
     public function refundPayment(array $data): array
@@ -317,16 +305,14 @@ class Bkash
                 'reason' => $data['reason'] ?? 'Refund requested by customer',
             ];
 
-            $response = Http::withHeaders([
-                'Authorization' => $token,
-                'X-APP-Key' => $this->credentials['app_key'],
-            ])->post("{$this->baseUrl}/{$this->version}/tokenized/checkout/payment/refund", $payload);
+            $response = Http::bkash($token)
+                ->post('payment/refund', $payload);
 
             $responseData = $response->json();
 
             if ($response->successful() && isset($responseData['refundTrxID'])) {
-
-                $refund = BkashRefund::create([
+                // Store the refund information
+                BkashRefund::create([
                     'payment_id' => $data['payment_id'],
                     'original_trx_id' => $responseData['originalTrxID'],
                     'refund_trx_id' => $responseData['refundTrxID'],
@@ -337,6 +323,7 @@ class Bkash
                     'reason' => $data['reason'] ?? 'Refund requested by customer',
                 ]);
 
+                // Update the payment status
                 $payment = BkashPayment::where('payment_id', $data['payment_id'])->first();
                 if ($payment) {
                     $payment->update([
@@ -359,5 +346,4 @@ class Bkash
             throw new RefundException('Failed to refund payment: ' . $e->getMessage());
         }
     }
-
 }

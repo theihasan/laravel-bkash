@@ -2,6 +2,7 @@
 
 namespace Ihasan\Bkash;
 
+use Illuminate\Support\Facades\Http;
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
 
@@ -20,8 +21,7 @@ class BkashServiceProvider extends PackageServiceProvider
             ->hasMigrations([
                 'create_bkash_payments_table',
                 'create_bkash_refunds_table'
-            ])
-            ->hasRoute('web');
+            ]);
     }
 
     public function packageRegistered(): void
@@ -30,4 +30,33 @@ class BkashServiceProvider extends PackageServiceProvider
             return new Bkash;
         });
     }
+
+    public function packageBooted(): void
+    {
+        Http::macro('bkash', function (string $token = null) {
+            $baseUrl = config('bkash.sandbox')
+                ? config('bkash.sandbox_base_url')
+                : config('bkash.live_base_url');
+
+            $version = config('bkash.version');
+
+            $client = Http::baseUrl("{$baseUrl}/{$version}/tokenized/checkout")
+                ->withHeaders([
+                    'Content-Type' => 'application/json',
+                    'Accept' => 'application/json',
+                ]);
+
+            if ($token) {
+                $client = $client->withHeaders([
+                    'Authorization' => $token,
+                    'X-APP-Key' => config('bkash.credentials.app_key'),
+                ]);
+            }
+
+            return $client;
+        });
+
+    }
+
+
 }
