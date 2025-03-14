@@ -22,6 +22,8 @@ class BkashServiceProvider extends PackageServiceProvider
                 'create_bkash_payments_table',
                 'create_bkash_refunds_table'
             ]);
+
+
     }
 
     public function packageRegistered(): void
