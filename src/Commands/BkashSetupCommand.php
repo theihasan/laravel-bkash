@@ -4,8 +4,8 @@ namespace Ihasan\Bkash\Commands;
 
 use Ihasan\Bkash\Facades\Bkash;
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Schema;
 
 class BkashSetupCommand extends Command
 {
@@ -19,7 +19,7 @@ class BkashSetupCommand extends Command
         $configPublished = false;
         $migrationsPublished = false;
 
-        if (!file_exists(config_path('bkash.php'))) {
+        if (! file_exists(config_path('bkash.php'))) {
             $this->error('bKash config file not found. Publishing config...');
             $this->call('vendor:publish', [
                 '--tag' => 'bkash-config',
@@ -35,7 +35,7 @@ class BkashSetupCommand extends Command
             $migrationsExist = true;
         }
 
-        if (!$migrationsExist) {
+        if (! $migrationsExist) {
             $this->error('bKash migrations not found. Publishing migrations...');
             $this->call('vendor:publish', [
                 '--tag' => 'bkash-migrations',
@@ -44,7 +44,7 @@ class BkashSetupCommand extends Command
             $migrationsPublished = true;
         }
 
-        if (!Schema::hasTable('bkash_payments')) {
+        if (! Schema::hasTable('bkash_payments')) {
             $this->error('bKash tables not found. Running migrations...');
             $this->call('migrate');
         }
@@ -63,6 +63,7 @@ class BkashSetupCommand extends Command
             $this->line('BKASH_APP_SECRET=your-app-secret');
             $this->line('BKASH_USERNAME=your-username');
             $this->line('BKASH_PASSWORD=your-password');
+
             return 1;
         }
 
@@ -72,12 +73,14 @@ class BkashSetupCommand extends Command
             try {
                 $token = Bkash::getToken();
                 $this->info('✓ Successfully connected to bKash API');
-                $this->line('Token: ' . substr($token, 0, 20) . '...');
+                $this->line('Token: '.substr($token, 0, 20).'...');
 
                 $this->info('bKash integration is properly set up and working!');
+
                 return 0;
             } catch (\Exception $e) {
-                $this->error('Failed to connect to bKash API: ' . $e->getMessage());
+                $this->error('Failed to connect to bKash API: '.$e->getMessage());
+
                 return 1;
             }
         }
