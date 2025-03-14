@@ -2,7 +2,6 @@
 
 namespace Ihasan\Bkash;
 
-use Ihasan\Bkash\Commands\BkashCommand;
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
 
@@ -28,7 +27,7 @@ class BkashServiceProvider extends PackageServiceProvider
     public function packageRegistered(): void
     {
         $this->app->singleton(Bkash::class, function ($app) {
-            return new Bkash();
+            return new Bkash;
         });
     }
 }
