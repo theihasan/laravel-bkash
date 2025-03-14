@@ -58,6 +58,11 @@ class BkashServiceProvider extends PackageServiceProvider
             return $client;
         });
 
+        if ($this->app->runningInConsole()) {
+            $this->commands([
+                \Ihasan\Bkash\Commands\BkashSetupCommand::class,
+            ]);
+        }
     }
 
 
