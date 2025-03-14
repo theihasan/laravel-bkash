@@ -2,9 +2,9 @@
 
 namespace Ihasan\Bkash;
 
+use Ihasan\Bkash\Commands\BkashCommand;
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
-use Ihasan\Bkash\Commands\BkashCommand;
 
 class BkashServiceProvider extends PackageServiceProvider
 {
