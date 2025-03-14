@@ -1,19 +1,5 @@
-# This is my package laravel-bkash
-
-[![Latest Version on Packagist](https://img.shields.io/packagist/v/theihasan/laravel-bkash.svg?style=flat-square)](https://packagist.org/packages/theihasan/laravel-bkash)
-[![GitHub Tests Action Status](https://img.shields.io/github/actions/workflow/status/theihasan/laravel-bkash/run-tests.yml?branch=main&label=tests&style=flat-square)](https://github.com/theihasan/laravel-bkash/actions?query=workflow%3Arun-tests+branch%3Amain)
-[![GitHub Code Style Action Status](https://img.shields.io/github/actions/workflow/status/theihasan/laravel-bkash/fix-php-code-style-issues.yml?branch=main&label=code%20style&style=flat-square)](https://github.com/theihasan/laravel-bkash/actions?query=workflow%3A"Fix+PHP+code+style+issues"+branch%3Amain)
-[![Total Downloads](https://img.shields.io/packagist/dt/theihasan/laravel-bkash.svg?style=flat-square)](https://packagist.org/packages/theihasan/laravel-bkash)
-
-This is where your description should go. Limit it to a paragraph or two. Consider adding a small example.
-
-## Support us
-
-[<img src="https://github-ads.s3.eu-central-1.amazonaws.com/laravel-bkash.jpg?t=1" width="419px" />](https://spatie.be/github-ad-click/laravel-bkash)
-
-We invest a lot of resources into creating [best in class open source packages](https://spatie.be/open-source). You can support us by [buying one of our paid products](https://spatie.be/open-source/support-us).
-
-We highly appreciate you sending us a postcard from your hometown, mentioning which of our package(s) you are using. You'll find our address on [our contact page](https://spatie.be/about-us). We publish all received postcards on [our virtual postcard wall](https://spatie.be/open-source/postcards).
+# Laravel bKash
+A Laravel package for integrating bKash Tokenized Payment Gateway.
 
 ## Installation
 
@@ -40,20 +26,122 @@ This is the contents of the published config file:
 
 ```php
 return [
+    /*
+    |--------------------------------------------------------------------------
+    | bKash Credentials
+    |--------------------------------------------------------------------------
+    |
+    | Here you may configure your bKash credentials for the Tokenized Payment system.
+    |
+    */
+    'sandbox' => env('BKASH_SANDBOX', true),
+    
+    'credentials' => [
+        'app_key' => env('BKASH_APP_KEY', ''),
+        'app_secret' => env('BKASH_APP_SECRET', ''),
+        'username' => env('BKASH_USERNAME', ''),
+        'password' => env('BKASH_PASSWORD', ''),
+    ],
+    
+    'sandbox_base_url' => env('SANDBOX_BASE_URL', 'https://tokenized.sandbox.bka.sh'),
+    'live_base_url' => env('LIVE_BASE_URL', 'https://tokenized.pay.bka.sh'),
+    
+    'version' => 'v1.2.0-beta',
+    
+    'cache' => [
+        'token_lifetime' => 3600, // 1 hour in seconds
+    ],
+    
+    'default_currency' => 'BDT',
+    'default_intent' => 'sale',
 ];
 ```
 
-Optionally, you can publish the views using
+## Configuration
 
-```bash
-php artisan vendor:publish --tag="laravel-bkash-views"
+Add the following environment variables to your `.env` file:
+
+```
+BKASH_SANDBOX=true
+BKASH_APP_KEY=your-app-key
+BKASH_APP_SECRET=your-app-secret
+BKASH_USERNAME=your-username
+BKASH_PASSWORD=your-password
+SANDBOX_BASE_URL=https://tokenized.sandbox.bka.sh
+LIVE_BASE_URL=https://tokenized.pay.bka.sh
 ```
 
 ## Usage
 
+### Initiating a Payment
+
 ```php
-$bkash = new Md Abul Hassan\Bkash();
-echo $bkash->echoPhrase('Hello, Md Abul Hassan!');
+use Ihasan\Bkash\Facades\Bkash;
+
+// Create a payment
+$paymentData = [
+    'amount' => '100',
+    'payer_reference' => 'customer123', // optional
+    'callback_url' => route('bkash.callback'),
+    'merchant_invoice_number' => 'INV-123456',
+];
+
+try {
+    $response = Bkash::createPayment($paymentData);
+    
+    // Redirect user to bKash payment page
+    return redirect()->away($response['bkashURL']);
+} catch (\Exception $e) {
+    // Handle exception
+    return back()->with('error', $e->getMessage());
+}
+```
+
+### Handling Callback
+
+In your callback route:
+
+```php
+use Ihasan\Bkash\Facades\Bkash;
+
+public function handleCallback(Request $request)
+{
+    $paymentId = $request->input('paymentID');
+    $status = $request->input('status');
+
+    if ($status === 'success') {
+        try {
+            $response = Bkash::executePayment($paymentId);
+            
+            // Payment successful, do something with $response
+            return redirect()->route('payment.success', [
+                'transaction_id' => $response['trxID'],
+            ]);
+        } catch (\Exception $e) {
+            // Handle exception
+            return redirect()->route('payment.failed')->with('error', $e->getMessage());
+        }
+    } else {
+        // Payment failed or cancelled
+        return redirect()->route('payment.failed')->with('error', 'Payment was not successful');
+    }
+}
+```
+
+### Getting a Token Manually
+
+```php
+use Ihasan\Bkash\Facades\Bkash;
+
+$token = Bkash::getToken();
+```
+
+### Refreshing a Token
+
+```php
+use Ihasan\Bkash\Facades\Bkash;
+
+$token = Bkash::refreshToken();
 ```
 
 ## Testing
@@ -77,7 +165,6 @@ Please review [our security policy](../../security/policy) on how to report secu
 ## Credits
 
 - [Md Abul Hassan](https://github.com/theihasan)
-- [All Contributors](../../contributors)
 
 ## License
 
