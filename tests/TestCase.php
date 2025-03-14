@@ -2,9 +2,9 @@
 
 namespace Ihasan\Bkash\Tests;
 
+use Ihasan\Bkash\BkashServiceProvider;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Orchestra\Testbench\TestCase as Orchestra;
-use Ihasan\Bkash\BkashServiceProvider;
 
 class TestCase extends Orchestra
 {
