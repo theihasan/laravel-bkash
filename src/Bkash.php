@@ -2,7 +2,6 @@
 
 namespace Ihasan\Bkash;
 
-use Ihasan\Bkash\Exceptions\BkashException;
 use Ihasan\Bkash\Exceptions\PaymentCreateException;
 use Ihasan\Bkash\Exceptions\PaymentExecuteException;
 use Ihasan\Bkash\Exceptions\PaymentQueryException;

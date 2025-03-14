@@ -20,9 +20,8 @@ class BkashServiceProvider extends PackageServiceProvider
             ->hasConfigFile()
             ->hasMigrations([
                 'create_bkash_payments_table',
-                'create_bkash_refunds_table'
+                'create_bkash_refunds_table',
             ]);
-
 
     }
 
@@ -35,7 +34,7 @@ class BkashServiceProvider extends PackageServiceProvider
 
     public function packageBooted(): void
     {
-        Http::macro('bkash', function (string $token = null) {
+        Http::macro('bkash', function (?string $token = null) {
             $baseUrl = config('bkash.sandbox')
                 ? config('bkash.sandbox_base_url')
                 : config('bkash.live_base_url');
@@ -59,6 +58,4 @@ class BkashServiceProvider extends PackageServiceProvider
         });
 
     }
-
-
 }
