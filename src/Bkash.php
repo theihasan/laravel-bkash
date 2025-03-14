@@ -283,7 +283,7 @@ class Bkash
                 throw $e;
             }
 
-            throw new PaymentQueryException('Failed to query payment status: ' . $e->getMessage());
+            throw new PaymentQueryException('Failed to query payment status: '.$e->getMessage());
         }
     }
 
@@ -343,7 +343,7 @@ class Bkash
                 throw $e;
             }
 
-            throw new RefundException('Failed to refund payment: ' . $e->getMessage());
+            throw new RefundException('Failed to refund payment: '.$e->getMessage());
         }
     }
 }
