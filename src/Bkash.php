@@ -248,4 +248,121 @@ class Bkash
             throw new PaymentExecuteException('Failed to execute payment: ' . $e->getMessage());
         }
     }
+
+    /**
+     * Query payment status
+     *
+     * @param string $paymentId
+     * @return array
+     * @throws PaymentQueryException
+     */
+    public function queryPayment(string $paymentId): array
+    {
+        try {
+            $token = $this->getToken();
+
+            $response = Http::withHeaders([
+                'Authorization' => $token,
+                'X-APP-Key' => $this->credentials['app_key'],
+            ])->post("{$this->baseUrl}/{$this->version}/tokenized/checkout/payment/status", [
+                'paymentID' => $paymentId,
+            ]);
+
+            $data = $response->json();
+
+            if ($response->successful() && isset($data['paymentID'])) {
+                // Update the payment information if it exists
+                $payment = BkashPayment::where('payment_id', $paymentId)->first();
+
+                if ($payment) {
+                    $payment->update([
+                        'trx_id' => $data['trxID'] ?? $payment->trx_id,
+                        'customer_msisdn' => $data['customerMsisdn'] ?? $payment->customer_msisdn,
+                        'payer_reference' => $data['payerReference'] ?? $payment->payer_reference,
+                        'agreement_id' => $data['agreementID'] ?? $payment->agreement_id,
+                        'transaction_status' => $data['transactionStatus'],
+                        'status_code' => $data['statusCode'],
+                        'status_message' => $data['statusMessage'],
+                    ]);
+                }
+
+                return $data;
+            }
+
+            throw new PaymentQueryException(
+                $data['statusMessage'] ?? 'Failed to query payment status',
+                $data['statusCode'] ?? 500
+            );
+        } catch (\Exception $e) {
+            if ($e instanceof PaymentQueryException) {
+                throw $e;
+            }
+
+            throw new PaymentQueryException('Failed to query payment status: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Refund a payment
+     *
+     * @param array $data
+     * @return array
+     * @throws RefundException
+     */
+    public function refundPayment(array $data): array
+    {
+        try {
+            $token = $this->getToken();
+
+            $payload = [
+                'paymentID' => $data['payment_id'],
+                'trxID' => $data['trx_id'],
+                'amount' => (string) $data['amount'],
+                'sku' => $data['sku'] ?? null,
+                'reason' => $data['reason'] ?? 'Refund requested by customer',
+            ];
+
+            $response = Http::withHeaders([
+                'Authorization' => $token,
+                'X-APP-Key' => $this->credentials['app_key'],
+            ])->post("{$this->baseUrl}/{$this->version}/tokenized/checkout/payment/refund", $payload);
+
+            $responseData = $response->json();
+
+            if ($response->successful() && isset($responseData['refundTrxID'])) {
+
+                $refund = BkashRefund::create([
+                    'payment_id' => $data['payment_id'],
+                    'original_trx_id' => $responseData['originalTrxID'],
+                    'refund_trx_id' => $responseData['refundTrxID'],
+                    'amount' => $data['amount'],
+                    'currency' => $responseData['currency'] ?? 'BDT',
+                    'transaction_status' => $responseData['transactionStatus'],
+                    'completed_time' => $responseData['completedTime'] ?? now(),
+                    'reason' => $data['reason'] ?? 'Refund requested by customer',
+                ]);
+
+                $payment = BkashPayment::where('payment_id', $data['payment_id'])->first();
+                if ($payment) {
+                    $payment->update([
+                        'transaction_status' => 'REFUNDED',
+                    ]);
+                }
+
+                return $responseData;
+            }
+
+            throw new RefundException(
+                $responseData['statusMessage'] ?? 'Failed to refund payment',
+                $responseData['statusCode'] ?? 500
+            );
+        } catch (\Exception $e) {
+            if ($e instanceof RefundException) {
+                throw $e;
+            }
+
+            throw new RefundException('Failed to refund payment: ' . $e->getMessage());
+        }
+    }
+
 }

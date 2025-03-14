@@ -12,14 +12,14 @@ composer require theihasan/laravel-bkash
 You can publish and run the migrations with:
 
 ```bash
-php artisan vendor:publish --tag="laravel-bkash-migrations"
+php artisan vendor:publish --tag="bkash-migrations"
 php artisan migrate
 ```
 
 You can publish the config file with:
 
 ```bash
-php artisan vendor:publish --tag="laravel-bkash-config"
+php artisan vendor:publish --tag="bkash-config"
 ```
 
 This is the contents of the published config file:
@@ -127,6 +127,74 @@ public function handleCallback(Request $request)
     }
 }
 ```
+### Querying Payment Status
+
+You can check the status of a payment using the `queryPayment` method:
+
+```php
+use Ihasan\Bkash\Facades\Bkash;
+
+try {
+    $response = Bkash::queryPayment($paymentId);
+    
+    // Check payment status
+    $status = $response['transactionStatus'];
+    
+    if ($status === 'Completed') {
+        // Payment is completed
+        return response()->json([
+            'success' => true,
+            'message' => 'Payment completed successfully',
+            'data' => $response
+        ]);
+    } else {
+        // Payment is not completed
+        return response()->json([
+            'success' => false,
+            'message' => 'Payment is ' . $status,
+            'data' => $response
+        ]);
+    }
+} catch (\Exception $e) {
+    // Handle exception
+    return response()->json([
+        'success' => false,
+        'message' => $e->getMessage()
+    ], 500);
+}
+```
+
+### Refunding a Payment
+
+You can refund a payment using the `refundPayment` method:
+
+```php
+use Ihasan\Bkash\Facades\Bkash;
+
+try {
+    $refundData = [
+        'payment_id' => $paymentId,
+        'trx_id' => $transactionId,
+        'amount' => '50', // Amount to refund (can be partial)
+        'reason' => 'Customer requested refund', // Optional
+        'sku' => 'PROD-123' // Optional
+    ];
+    
+    $response = Bkash::refundPayment($refundData);
+    
+    return response()->json([
+        'success' => true,
+        'message' => 'Refund processed successfully',
+        'data' => $response
+    ]);
+} catch (\Exception $e) {
+    // Handle exception
+    return response()->json([
+        'success' => false,
+        'message' => $e->getMessage()
+    ], 500);
+}
+```
 
 ### Getting a Token Manually
 
@@ -142,6 +210,51 @@ $token = Bkash::getToken();
 use Ihasan\Bkash\Facades\Bkash;
 
 $token = Bkash::refreshToken();
+```
+## Available Methods
+
+The package provides the following methods:
+
+- `getToken()` - Generate a new authorization token
+- `refreshToken()` - Refresh an existing token
+- `createPayment(array $data)` - Create a new payment
+- `executePayment(string $paymentId)` - Execute a payment after user authorization
+- `queryPayment(string $paymentId)` - Check the status of a payment
+- `refundPayment(array $data)` - Refund a completed payment (can be partial)
+
+## Models
+
+The package includes two models:
+
+### BkashPayment
+
+This model stores information about payments:
+
+```php
+use Ihasan\Bkash\Models\BkashPayment;
+
+// Find a payment by ID
+$payment = BkashPayment::where('payment_id', $paymentId)->first();
+
+// Get all payments
+$payments = BkashPayment::all();
+
+// Get payments with a specific status
+$completedPayments = BkashPayment::where('transaction_status', 'Completed')->get();
+```
+
+### BkashRefund
+
+This model stores information about refunds:
+
+```php
+use Ihasan\Bkash\Models\BkashRefund;
+
+// Find a refund by transaction ID
+$refund = BkashRefund::where('refund_trx_id', $refundTrxId)->first();
+
+// Get all refunds for a payment
+$refunds = BkashRefund::where('payment_id', $paymentId)->get();
 ```
 
 ## Testing

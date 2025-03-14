@@ -11,6 +11,8 @@ use Illuminate\Support\Facades\Facade;
  * @method static string refreshToken()
  * @method static array createPayment(array $data)
  * @method static array executePayment(string $paymentId)
+ * @method static array queryPayment(string $paymentId)
+ * @method static array refundPayment(array $data)
  */
 class Bkash extends Facade
 {

@@ -31,4 +31,12 @@ class BkashPayment extends Model
         'payment_execute_time' => 'datetime',
         'agreement_execute_time' => 'datetime',
     ];
+
+    /**
+     * Get the refunds for the payment.
+     */
+    public function refunds()
+    {
+        return $this->hasMany(BkashRefund::class, 'payment_id', 'payment_id');
+    }
 }

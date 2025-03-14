@@ -18,8 +18,11 @@ class BkashServiceProvider extends PackageServiceProvider
         $package
             ->name('laravel-bkash')
             ->hasConfigFile()
-            ->hasMigration('create_bkash_payments_table')
-            ->hasViews();
+            ->hasMigrations([
+                'create_bkash_payments_table',
+                'create_bkash_refunds_table'
+            ])
+            ->hasRoute('web');
     }
 
     public function packageRegistered(): void
