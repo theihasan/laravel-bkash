@@ -1,10 +1,10 @@
 <?php
 
-namespace Md Abul Hassan\Bkash\Tests;
+namespace Ihasan\Bkash\Tests;
 
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Orchestra\Testbench\TestCase as Orchestra;
-use Md Abul Hassan\Bkash\BkashServiceProvider;
+use Ihasan\Bkash\BkashServiceProvider;
 
 class TestCase extends Orchestra
 {

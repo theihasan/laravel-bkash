@@ -30,13 +30,13 @@
     },
     "autoload": {
         "psr-4": {
-            "Md Abul Hassan\\Bkash\\": "src/",
-            "Md Abul Hassan\\Bkash\\Database\\Factories\\": "database/factories/"
+            "Ihasan\\Bkash\\": "src/",
+            "Ihasan\\Bkash\\Database\\Factories\\": "database/factories/"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "Md Abul Hassan\\Bkash\\Tests\\": "tests/",
+            "Ihasan\\Bkash\\Tests\\": "tests/",
             "Workbench\\App\\": "workbench/app/"
         }
     },
@@ -58,10 +58,10 @@
     "extra": {
         "laravel": {
             "providers": [
-                "Md Abul Hassan\\Bkash\\BkashServiceProvider"
+                "Ihasan\\Bkash\\BkashServiceProvider"
             ],
             "aliases": {
-                "Bkash": "Md Abul Hassan\\Bkash\\Facades\\Bkash"
+                "Bkash": "Ihasan\\Bkash\\Facades\\Bkash"
             }
         }
     },
