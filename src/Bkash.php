@@ -2,7 +2,6 @@
 
 namespace Ihasan\Bkash;
 
-use Ihasan\Bkash\Exceptions\BkashException;
 use Ihasan\Bkash\Exceptions\PaymentCreateException;
 use Ihasan\Bkash\Exceptions\PaymentExecuteException;
 use Ihasan\Bkash\Exceptions\RefreshTokenException;
@@ -14,7 +13,9 @@ use Illuminate\Support\Facades\Http;
 class Bkash
 {
     protected string $baseUrl;
+
     protected array $credentials;
+
     protected string $version;
 
     public function __construct()
@@ -30,7 +31,6 @@ class Bkash
     /**
      * Get the authorization token
      *
-     * @return string
      * @throws TokenGenerationException
      */
     public function getToken(): string
@@ -74,21 +74,20 @@ class Bkash
                 throw $e;
             }
 
-            throw new TokenGenerationException('Failed to connect to bKash API: ' . $e->getMessage());
+            throw new TokenGenerationException('Failed to connect to bKash API: '.$e->getMessage());
         }
     }
 
     /**
      * Refresh the authorization token
      *
-     * @return string
      * @throws RefreshTokenException
      */
     public function refreshToken(): string
     {
         $refreshToken = Cache::get('bkash_refresh_token');
 
-        if (!$refreshToken) {
+        if (! $refreshToken) {
             return $this->getToken();
         }
 
@@ -126,15 +125,13 @@ class Bkash
                 throw $e;
             }
 
-            throw new RefreshTokenException('Failed to connect to bKash API: ' . $e->getMessage());
+            throw new RefreshTokenException('Failed to connect to bKash API: '.$e->getMessage());
         }
     }
 
     /**
      * Create a payment
      *
-     * @param array $data
-     * @return array
      * @throws PaymentCreateException
      */
     public function createPayment(array $data): array
@@ -189,15 +186,13 @@ class Bkash
                 throw $e;
             }
 
-            throw new PaymentCreateException('Failed to create payment: ' . $e->getMessage());
+            throw new PaymentCreateException('Failed to create payment: '.$e->getMessage());
         }
     }
 
     /**
      * Execute a payment
      *
-     * @param string $paymentId
-     * @return array
      * @throws PaymentExecuteException
      */
     public function executePayment(string $paymentId): array
@@ -245,7 +240,7 @@ class Bkash
                 throw $e;
             }
 
-            throw new PaymentExecuteException('Failed to execute payment: ' . $e->getMessage());
+            throw new PaymentExecuteException('Failed to execute payment: '.$e->getMessage());
         }
     }
 }
