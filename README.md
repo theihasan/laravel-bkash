@@ -496,8 +496,16 @@ Route::get('/bkash/status', [BkashPaymentController::class, 'checkStatus'])->nam
 Route::post('/bkash/refund', [BkashPaymentController::class, 'refundPayment'])->name('bkash.refund');
 Route::get('/payment/success', [BkashPaymentController::class, 'showSuccessPage'])->name('payment.success');
 Route::get('/payment/failed', [BkashPaymentController::class, 'showFailurePage'])->name('payment.failed');
-
 ```
+
+#### **What's Next**
+
+I am working on the next version with additional features:
+
+* Agreement-based recurring payments
+* Webhook support
+
+I welcome your feedback and contributions to make Laravel bKash even better!
 ## Testing
 
 ```bash
