@@ -3,6 +3,7 @@
 namespace Ihasan\Bkash;
 
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Route;
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
 
@@ -18,11 +19,11 @@ class BkashServiceProvider extends PackageServiceProvider
         $package
             ->name('laravel-bkash')
             ->hasConfigFile()
+            ->hasViews('bkash')
             ->hasMigrations([
                 'create_bkash_payments_table',
                 'create_bkash_refunds_table',
             ]);
-
     }
 
     public function packageRegistered(): void
@@ -57,10 +58,37 @@ class BkashServiceProvider extends PackageServiceProvider
             return $client;
         });
 
+        $this->registerRoutes();
+
         if ($this->app->runningInConsole()) {
+
             $this->commands([
                 \Ihasan\Bkash\Commands\BkashSetupCommand::class,
             ]);
+
+
+            $this->publishes([
+                __DIR__.'/../resources/views' => resource_path('views/vendor/bkash'),
+            ], 'bkash-views');
+
         }
+    }
+
+    protected function registerRoutes(): void
+    {
+        if (config('bkash.routes.enabled', true)) {
+            Route::group($this->routeConfiguration(), function () {
+                $this->loadRoutesFrom(__DIR__.'/routes/web.php');
+            });
+        }
+    }
+
+    protected function routeConfiguration(): array
+    {
+        return [
+            'prefix' => config('bkash.routes.prefix', 'bkash'),
+            'middleware' => config('bkash.routes.middleware', ['web']),
+            'as' => 'bkash.',
+        ];
     }
 }
