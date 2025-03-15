@@ -10,7 +10,7 @@ composer require theihasan/laravel-bkash
 ```
 Run this command for quick setup and test bkash api connection
 ```php
-php artisan bkash:setup --test
+php artisan bkash:setup --test --publish-views --publish-controllers
 ```
 You can publish and run the migrations with:
 
@@ -76,7 +76,7 @@ LIVE_BASE_URL=https://tokenized.pay.bka.sh
 
 ## Usage
 
-### Initiating a Payment
+### Initiating and Handling callback of a Payment
 
 ```php
 use Ihasan\Bkash\Facades\Bkash;
@@ -85,7 +85,7 @@ use Ihasan\Bkash\Facades\Bkash;
 $paymentData = [
     'amount' => '100',
     'payer_reference' => 'customer123', // optional
-    'callback_url' => route('bkash.callback'),
+    'callback_url' => route('bkash.callback'), // Don't change this. Otherwise automatic payment execution won't work. You have handle callback manually 
     'merchant_invoice_number' => 'INV-123456',
 ];
 
@@ -93,7 +93,7 @@ try {
     $response = Bkash::createPayment($paymentData);
     
     // Redirect user to bKash payment page
-    return redirect()->away($response['bkashURL']);
+    return redirect()->away($response);
 } catch (\Exception $e) {
     // Handle exception
     return back()->with('error', $e->getMessage());
@@ -319,6 +319,122 @@ try {
 }
 ```
 
+## Simplified Payment Flow
+
+This package includes built-in routes and controllers to handle the bKash payment flow with minimal code.
+
+### Using the Built-in Payment Flow
+
+The package provides these routes out of the box:
+
+- `POST /bkash/payment` - Initialize a payment
+- `GET /bkash/callback` - Handle bKash callback
+- `GET /bkash/success` - Display success page
+- `GET /bkash/failed` - Display failed page
+- `POST /bkash/query` - Query payment status
+- `POST /bkash/refund` - Refund a payment
+
+
+#### Customizing Redirect URLs
+
+If you want to use your own success and failure pages, you can configure them in the `bkash.php` config file:
+
+```php
+'redirect_urls' => [
+    'success' => '/payment/success',
+    'failed' => '/payment/failed',
+],
+```
+
+#### Disabling Built-in Routes
+
+If you prefer to implement your own routes and controllers, you can disable the built-in routes:
+
+```php
+'routes' => [
+    'enabled' => false,
+],
+```
+
+### Manual Implementation
+
+You can still use the core methods directly if you need more control:
+
+```php
+use Ihasan\Bkash\Facades\Bkash;
+
+// Create payment
+$paymentData = [
+    'amount' => '100',
+    'payer_reference' => '01XXXXXXXXX',
+    'callback_url' => route('your.callback.route'),
+    'merchant_invoice_number' => 'INV-12345',
+];
+$response = Bkash::createPayment($paymentData);
+return redirect()->away($response);
+
+// Execute payment
+$response = Bkash::executePayment($paymentId);
+
+// Query payment
+$response = Bkash::queryPayment($paymentId);
+
+// Refund payment
+$refundData = [
+    'payment_id' => $paymentId,
+    'trx_id' => $trxId,
+    'amount' => '100',
+    'reason' => 'Customer requested refund',
+];
+$response = Bkash::refundPayment($refundData);
+```
+
+## Customizing Views and Controllers
+
+### Publishing Views
+
+If you want to customize the payment success and failure pages, you can publish the views:
+
+```bash
+php artisan bkash:setup --publish-views
+```
+
+This will copy the view files to `resources/views/vendor/bkash/` where you can modify them according to your needs.
+
+### Publishing Controllers
+
+If you need more control over the payment flow, you can publish the controllers:
+
+```bash
+php artisan bkash:setup --publish-controllers
+```
+
+This will copy the controllers to `app/Http/Controllers/Vendor/Bkash/`. After publishing, you'll need to:
+
+1. Update the namespace of the controllers to match your application's namespace structure
+2. Update the route file to use your custom controllers
+
+Example route configuration after publishing controllers:
+
+```php
+// In your routes/web.php file
+Route::prefix('bkash')->name('bkash.')->group(function () {
+    Route::post('/payment', [\App\Http\Controllers\Vendor\Bkash\BkashController::class, 'initPayment'])->name('init');
+    Route::get('/callback', [\App\Http\Controllers\Vendor\Bkash\BkashController::class, 'callback'])->name('callback');
+    // Add other routes as needed
+});
+```
+
+Alternatively, you can disable the built-in routes in the config file and define your own routes:
+
+```php
+// In config/bkash.php
+'routes' => [
+    'enabled' => false,
+],
+```
+
+
 #### **Complete Payment Flow Example**
 
 ```php
@@ -512,21 +628,10 @@ I welcome your feedback and contributions to make Laravel bKash even better!
 composer test
 ```
 
-## Changelog
-
-Please see [CHANGELOG](CHANGELOG.md) for more information on what has changed recently.
-
-## Contributing
-
-Please see [CONTRIBUTING](CONTRIBUTING.md) for details.
-
-## Security Vulnerabilities
-
-Please review [our security policy](../../security/policy) on how to report security vulnerabilities.
-
 ## Credits
 
 - [Md Abul Hassan](https://github.com/theihasan)
+- Special thanks to [Ahmed Shamim Hasan Shaon](https://github.com/me-shaon)
 
 ## License
 

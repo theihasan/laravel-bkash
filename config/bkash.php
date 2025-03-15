@@ -45,7 +45,7 @@ return [
     | You can override the default success and failure URLs
     */
     'redirect_urls' => [
-        'success' => null, // If null, will use the package's success view
-        'failed' => null,  // If null, will use the package's failed view
+        'success' => null,
+        'failed' => null,
     ],
 ];
