@@ -71,6 +71,10 @@ class BkashServiceProvider extends PackageServiceProvider
                 __DIR__.'/../resources/views' => resource_path('views/vendor/bkash'),
             ], 'bkash-views');
 
+            $this->publishes([
+                __DIR__.'/Http/Controllers' => app_path('Http/Controllers/Vendor/Bkash'),
+            ], 'bkash-controllers');
+
         }
     }
 

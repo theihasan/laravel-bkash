@@ -11,7 +11,8 @@ class BkashSetupCommand extends Command
 {
     protected $signature = 'bkash:setup
                             {--test : Test the connection to bKash API}
-                            {--publish-views : Publish the views for customization}';
+                            {--publish-views : Publish the views for customization}
+                            {--publish-controllers : Publish the controllers for customization}';
 
     protected $description = 'Set up bKash integration';
 
@@ -20,7 +21,7 @@ class BkashSetupCommand extends Command
         $configPublished = false;
         $migrationsPublished = false;
 
-
+        // Check if config exists
         if (! File::exists(config_path('bkash.php'))) {
             $this->error('bKash config not found. Publishing config...');
             $this->call('vendor:publish', [
@@ -30,7 +31,7 @@ class BkashSetupCommand extends Command
             $configPublished = true;
         }
 
-
+        // Check if migrations exist
         $migrationsExist = File::exists(database_path('migrations/create_bkash_payments_table.php')) ||
             File::glob(database_path('migrations/*_create_bkash_payments_table.php'));
 
@@ -61,6 +62,15 @@ class BkashSetupCommand extends Command
             $this->info('Views published successfully.');
         }
 
+        // Publish controllers if requested
+        if ($this->option('publish-controllers')) {
+            $this->info('Publishing controllers...');
+            $this->call('vendor:publish', [
+                '--tag' => 'bkash-controllers',
+            ]);
+            $this->info('Controllers published successfully.');
+            $this->warn('Note: You may need to update the namespace of the published controllers.');
+        }
 
         $credentials = config('bkash.credentials');
         if (empty($credentials['app_key']) || empty($credentials['app_secret']) ||
