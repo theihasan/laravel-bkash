@@ -9,18 +9,20 @@ use Illuminate\Support\Facades\Schema;
 
 class BkashSetupCommand extends Command
 {
-    protected $signature = 'bkash:setup {--test : Test the connection to bKash API}';
+    protected $signature = 'bkash:setup
+                            {--test : Test the connection to bKash API}
+                            {--publish-views : Publish the views for customization}';
 
-    protected $description = 'Setup and verify bKash integration';
+    protected $description = 'Set up bKash integration';
 
     public function handle()
     {
-        $this->info('Setting up bKash integration...');
         $configPublished = false;
         $migrationsPublished = false;
 
-        if (! file_exists(config_path('bkash.php'))) {
-            $this->error('bKash config file not found. Publishing config...');
+
+        if (! File::exists(config_path('bkash.php'))) {
+            $this->error('bKash config not found. Publishing config...');
             $this->call('vendor:publish', [
                 '--tag' => 'bkash-config',
             ]);
@@ -28,12 +30,9 @@ class BkashSetupCommand extends Command
             $configPublished = true;
         }
 
-        $migrationsExist = false;
-        $migrationFiles = File::glob(database_path('migrations/*_create_bkash_payments_table.php'));
 
-        if (count($migrationFiles) > 0) {
-            $migrationsExist = true;
-        }
+        $migrationsExist = File::exists(database_path('migrations/create_bkash_payments_table.php')) ||
+            File::glob(database_path('migrations/*_create_bkash_payments_table.php'));
 
         if (! $migrationsExist) {
             $this->error('bKash migrations not found. Publishing migrations...');
@@ -52,6 +51,16 @@ class BkashSetupCommand extends Command
         if ($configPublished) {
             $this->call('config:clear');
         }
+
+        // Publish views if requested
+        if ($this->option('publish-views')) {
+            $this->info('Publishing views...');
+            $this->call('vendor:publish', [
+                '--tag' => 'bkash-views',
+            ]);
+            $this->info('Views published successfully.');
+        }
+
 
         $credentials = config('bkash.credentials');
         if (empty($credentials['app_key']) || empty($credentials['app_secret']) ||
@@ -87,6 +96,8 @@ class BkashSetupCommand extends Command
 
         $this->info('bKash integration is properly set up!');
         $this->info('Run `php artisan bkash:setup --test` to test the connection to bKash API.');
+        $this->info('Run `php artisan bkash:setup --publish-views` to publish and customize the views.');
+        $this->info('Run `php artisan bkash:setup --publish-controllers` to publish and customize the controllers.');
 
         return 0;
     }
