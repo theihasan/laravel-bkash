@@ -3,13 +3,13 @@
 namespace Ihasan\Bkash\Http\Controllers;
 
 use Ihasan\Bkash\Facades\Bkash;
+use Ihasan\Bkash\Models\BkashPayment;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Str;
 
 class BkashController extends Controller
 {
-
     /**
      * Handle the callback from bKash
      *
@@ -28,7 +28,15 @@ class BkashController extends Controller
         }
 
         try {
-            $response = Bkash::executePayment($paymentId);
+            $payment = BkashPayment::where('payment_id', $paymentId)
+                ->where('transaction_status', 'Completed')
+                ->first();
+
+            if ($payment && !empty($payment->trx_id)) {
+                $response = Bkash::queryPayment($paymentId);
+            } else {
+                $response = Bkash::executePayment($paymentId);
+            }
 
             $successUrl = config('bkash.redirect_urls.success');
             if ($successUrl) {
@@ -78,5 +86,4 @@ class BkashController extends Controller
 
         return view('bkash::failed', compact('error', 'paymentId'));
     }
-
 }
