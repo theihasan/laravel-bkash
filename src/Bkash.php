@@ -294,6 +294,14 @@ class Bkash
     public function refundPayment(array $data): array
     {
         try {
+            $payment = BkashPayment::where('payment_id', $data['payment_id'])
+                ->where('transaction_status', 'REFUNDED')
+                ->first();
+
+            if ($payment) {
+                throw new RefundException('This payment has already been refunded.');
+            }
+
             $token = $this->getToken();
 
             $payload = [
@@ -310,7 +318,18 @@ class Bkash
             $responseData = $response->json();
 
             if ($response->successful() && isset($responseData['refundTrxID'])) {
-                // Store the refund information
+                $completedTime = null;
+                if (isset($responseData['completedTime'])) {
+                    try {
+                        $dateString = preg_replace('/(\d{2}):(\d{3})/', '$1.$2', $responseData['completedTime']);
+                        $completedTime = \Carbon\Carbon::parse($dateString);
+                    } catch (\Exception $e) {
+                        $completedTime = now();
+                    }
+                } else {
+                    $completedTime = now();
+                }
+
                 BkashRefund::create([
                     'payment_id' => $data['payment_id'],
                     'original_trx_id' => $responseData['originalTrxID'],
@@ -318,11 +337,10 @@ class Bkash
                     'amount' => $data['amount'],
                     'currency' => $responseData['currency'] ?? 'BDT',
                     'transaction_status' => $responseData['transactionStatus'],
-                    'completed_time' => $responseData['completedTime'] ?? now(),
+                    'completed_time' => $completedTime,
                     'reason' => $data['reason'] ?? 'Refund requested by customer',
                 ]);
 
-                // Update the payment status
                 $payment = BkashPayment::where('payment_id', $data['payment_id'])->first();
                 if ($payment) {
                     $payment->update([
@@ -345,4 +363,5 @@ class Bkash
             throw new RefundException('Failed to refund payment: '.$e->getMessage());
         }
     }
+
 }
