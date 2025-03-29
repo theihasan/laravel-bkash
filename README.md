@@ -93,7 +93,7 @@ try {
     $response = Bkash::createPayment($paymentData);
     
     // Redirect user to bKash payment page
-    return redirect()->away($response);
+    return redirect()->away($response['bkashURL']);
 } catch (\Exception $e) {
     // Handle exception
     return back()->with('error', $e->getMessage());

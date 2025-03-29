@@ -170,7 +170,7 @@ class Bkash
                     'status_message' => $responseData['statusMessage'],
                 ]);
 
-                return $responseData['bkashURL'];
+                return $responseData;
             }
 
             throw new PaymentCreateException(
