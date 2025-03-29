@@ -102,7 +102,7 @@ try {
 
 ### Handling Callback
 
-In your callback route:
+If you want to handle callback in your own way you may follow these steps
 
 ```php
 use Ihasan\Bkash\Facades\Bkash;
@@ -327,12 +327,9 @@ This package includes built-in routes and controllers to handle the bKash paymen
 
 The package provides these routes out of the box:
 
-- `POST /bkash/payment` - Initialize a payment
 - `GET /bkash/callback` - Handle bKash callback
 - `GET /bkash/success` - Display success page
 - `GET /bkash/failed` - Display failed page
-- `POST /bkash/query` - Query payment status
-- `POST /bkash/refund` - Refund a payment
 
 
 #### Customizing Redirect URLs
@@ -412,18 +409,7 @@ php artisan bkash:setup --publish-controllers
 This will copy the controllers to `app/Http/Controllers/Vendor/Bkash/`. After publishing, you'll need to:
 
 1. Update the namespace of the controllers to match your application's namespace structure
-2. Update the route file to use your custom controllers
 
-Example route configuration after publishing controllers:
-
-```php
-// In your routes/web.php file
-Route::prefix('bkash')->name('bkash.')->group(function () {
-    Route::post('/payment', [\App\Http\Controllers\Vendor\Bkash\BkashController::class, 'initPayment'])->name('init');
-    Route::get('/callback', [\App\Http\Controllers\Vendor\Bkash\BkashController::class, 'callback'])->name('callback');
-    // Add other routes as needed
-});
-```
 
 Alternatively, you can disable the built-in routes in the config file and define your own routes:
 
@@ -434,182 +420,11 @@ Alternatively, you can disable the built-in routes in the config file and define
 ],
 ```
 
-
-#### **Complete Payment Flow Example**
-
-```php
-<?php
-
-namespace App\Http\Controllers;
-
-use Ihasan\Bkash\Facades\Bkash;
-use Illuminate\Http\Request;
-
-class BkashPaymentController extends Controller
-{
-    /**
-     * Initiate a payment
-     */
-    public function initiatePayment(Request $request)
-    {
-        try {
-            // Validate the request
-            $request->validate([
-                'amount' => 'required|numeric|min:1',
-                'invoice_number' => 'required|string',
-            ]);
-
-            // Prepare payment data
-            $paymentData = [
-                'amount' => $request->amount,
-                'merchant_invoice_number' => $request->invoice_number,
-                'callback_url' => route('bkash.callback'),
-                'payer_reference' => auth()->id(), // Optional
-            ];
-
-            // Create the payment
-            $response = Bkash::createPayment($paymentData);
-            
-            // Redirect user to bKash payment page
-            return redirect()->away($response['bkashURL']);
-        } catch (\Ihasan\Bkash\Exceptions\PaymentCreateException $e) {
-            // Handle payment creation failure
-            return back()->with('error', 'Payment creation failed: ' . $e->getMessage());
-        } catch (\Exception $e) {
-            // Handle other exceptions
-            return back()->with('error', 'An error occurred: ' . $e->getMessage());
-        }
-    }
-
-    /**
-     * Handle the callback from bKash
-     */
-    public function handleCallback(Request $request)
-    {
-        $paymentId = $request->input('paymentID');
-        $status = $request->input('status');
-
-        if ($status === 'success') {
-            try {
-                // Execute the payment
-                $response = Bkash::executePayment($paymentId);
-                
-                // Update your order status
-                // For example:
-                // $order = Order::where('invoice_number', $response['merchantInvoiceNumber'])->first();
-                // $order->update(['status' => 'paid', 'transaction_id' => $response['trxID']]);
-                
-                return redirect()->route('payment.success', [
-                    'transaction_id' => $response['trxID'],
-                ]);
-            } catch (\Ihasan\Bkash\Exceptions\PaymentExecuteException $e) {
-                // Handle payment execution failure
-                return redirect()->route('payment.failed')->with('error', 'Payment execution failed: ' . $e->getMessage());
-            }
-        } else {
-            // Payment failed or cancelled by user
-            return redirect()->route('payment.failed')->with('error', 'Payment was not successful');
-        }
-    }
-
-    /**
-     * Check payment status
-     */
-    public function checkStatus(Request $request)
-    {
-        try {
-            $paymentId = $request->input('payment_id');
-            $response = Bkash::queryPayment($paymentId);
-            
-            return response()->json([
-                'success' => true,
-                'status' => $response['transactionStatus'],
-                'data' => $response
-            ]);
-        } catch (\Ihasan\Bk
-        } catch (\Ihasan\Bkash\Exceptions\PaymentQueryException $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to check payment status: ' . $e->getMessage()
-            ], 500);
-        }
-    }
-
-    /**
-     * Process a refund
-     */
-    public function refundPayment(Request $request)
-    {
-        try {
-            // Validate the request
-            $request->validate([
-                'payment_id' => 'required|string',
-                'trx_id' => 'required|string',
-                'amount' => 'required|numeric|min:1',
-                'reason' => 'nullable|string',
-            ]);
-
-            // Prepare refund data
-            $refundData = [
-                'payment_id' => $request->payment_id,
-                'trx_id' => $request->trx_id,
-                'amount' => $request->amount,
-                'reason' => $request->reason ?? 'Customer requested refund',
-            ];
-
-            // Process the refund
-            $response = Bkash::refundPayment($refundData);
-            
-            return response()->json([
-                'success' => true,
-                'message' => 'Refund processed successfully',
-                'data' => $response
-            ]);
-        } catch (\Ihasan\Bkash\Exceptions\RefundException $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Refund failed: ' . $e->getMessage()
-            ], 500);
-        }
-    }
-
-    /**
-     * Show payment success page
-     */
-    public function showSuccessPage(Request $request)
-    {
-        $transactionId = $request->input('transaction_id');
-        
-        // You can fetch payment details from your database
-        // $payment = BkashPayment::where('trx_id', $transactionId)->first();
-        
-        return view('payments.success', [
-            'transaction_id' => $transactionId
-        ]);
-    }
-
-    /**
-     * Show payment failure page
-     */
-    public function showFailurePage(Request $request)
-    {
-        $error = $request->session()->get('error');
-        
-        return view('payments.failed', [
-            'error' => $error
-        ]);
-    }
-}
-
-```
 #### **Routes Example**
 ```php
 use App\Http\Controllers\BkashPaymentController;
 
-Route::post('/bkash/payment', [BkashPaymentController::class, 'initiatePayment'])->name('bkash.payment');
 Route::get('/bkash/callback', [BkashPaymentController::class, 'handleCallback'])->name('bkash.callback');
-Route::get('/bkash/status', [BkashPaymentController::class, 'checkStatus'])->name('bkash.status');
-Route::post('/bkash/refund', [BkashPaymentController::class, 'refundPayment'])->name('bkash.refund');
 Route::get('/payment/success', [BkashPaymentController::class, 'showSuccessPage'])->name('payment.success');
 Route::get('/payment/failed', [BkashPaymentController::class, 'showFailurePage'])->name('payment.failed');
 ```
