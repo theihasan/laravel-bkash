@@ -66,10 +66,10 @@ Add the following environment variables to your `.env` file:
 
 ```
 BKASH_SANDBOX=true
-BKASH_APP_KEY=your-app-key
-BKASH_APP_SECRET=your-app-secret
-BKASH_USERNAME=your-username
-BKASH_PASSWORD=your-password
+BKASH_APP_KEY='0vWQuCRGiUX7EPVjQDr0EUAYtc'
+BKASH_APP_SECRET='jcUNPBgbcqEDedNKdvE4G1cAK7D3hCjmJccNPZZBq96QIxxwAMEx'
+BKASH_USERNAME='01770618567'
+BKASH_PASSWORD='D7DaC<*E*eG'
 SANDBOX_BASE_URL=https://tokenized.sandbox.bka.sh
 LIVE_BASE_URL=https://tokenized.pay.bka.sh
 ```
@@ -410,25 +410,12 @@ This will copy the controllers to `app/Http/Controllers/Vendor/Bkash/`. After pu
 
 1. Update the namespace of the controllers to match your application's namespace structure
 
-
-Alternatively, you can disable the built-in routes in the config file and define your own routes:
-
+### **Sandbox Credentials:**
 ```php
-// In config/bkash.php
-'routes' => [
-    'enabled' => false,
-],
+Testing Number: 01929918378, 01619777283, 01619777282, 01823074817
+OTP: 123456
+PIN: 12121
 ```
-
-#### **Routes Example**
-```php
-use App\Http\Controllers\BkashPaymentController;
-
-Route::get('/bkash/callback', [BkashPaymentController::class, 'handleCallback'])->name('bkash.callback');
-Route::get('/payment/success', [BkashPaymentController::class, 'showSuccessPage'])->name('payment.success');
-Route::get('/payment/failed', [BkashPaymentController::class, 'showFailurePage'])->name('payment.failed');
-```
-
 #### **What's Next**
 
 I am working on the next version with additional features:
