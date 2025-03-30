@@ -132,7 +132,7 @@ class Bkash
      *
      * @throws PaymentCreateException
      */
-    public function createPayment(array $data) : string
+    public function createPayment(array $data) : array
     {
         try {
             $token = $this->getToken();
