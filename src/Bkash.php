@@ -12,6 +12,7 @@ use Ihasan\Bkash\Models\BkashPayment;
 use Ihasan\Bkash\Models\BkashRefund;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\DB;
 
 class Bkash
 {
@@ -318,37 +319,39 @@ class Bkash
             $responseData = $response->json();
 
             if ($response->successful() && isset($responseData['refundTrxID'])) {
-                $completedTime = null;
-                if (isset($responseData['completedTime'])) {
-                    try {
-                        $dateString = preg_replace('/(\d{2}):(\d{3})/', '$1.$2', $responseData['completedTime']);
-                        $completedTime = \Carbon\Carbon::parse($dateString);
-                    } catch (\Exception $e) {
+                return DB::transaction(function () use ($data, $responseData) {
+                    $completedTime = null;
+                    if (isset($responseData['completedTime'])) {
+                        try {
+                            $dateString = preg_replace('/(\d{2}):(\d{3})/', '$1.$2', $responseData['completedTime']);
+                            $completedTime = \Carbon\Carbon::parse($dateString);
+                        } catch (\Exception $e) {
+                            $completedTime = now();
+                        }
+                    } else {
                         $completedTime = now();
                     }
-                } else {
-                    $completedTime = now();
-                }
 
-                BkashRefund::create([
-                    'payment_id' => $data['payment_id'],
-                    'original_trx_id' => $responseData['originalTrxID'],
-                    'refund_trx_id' => $responseData['refundTrxID'],
-                    'amount' => $data['amount'],
-                    'currency' => $responseData['currency'] ?? 'BDT',
-                    'transaction_status' => $responseData['transactionStatus'],
-                    'completed_time' => $completedTime,
-                    'reason' => $data['reason'] ?? 'Refund requested by customer',
-                ]);
-
-                $payment = BkashPayment::where('payment_id', $data['payment_id'])->first();
-                if ($payment) {
-                    $payment->update([
-                        'transaction_status' => 'REFUNDED',
+                    BkashRefund::create([
+                        'payment_id' => $data['payment_id'],
+                        'original_trx_id' => $responseData['originalTrxID'],
+                        'refund_trx_id' => $responseData['refundTrxID'],
+                        'amount' => $data['amount'],
+                        'currency' => $responseData['currency'] ?? 'BDT',
+                        'transaction_status' => $responseData['transactionStatus'],
+                        'completed_time' => $completedTime,
+                        'reason' => $data['reason'] ?? 'Refund requested by customer',
                     ]);
-                }
 
-                return $responseData;
+                    $payment = BkashPayment::where('payment_id', $data['payment_id'])->first();
+                    if ($payment) {
+                        $payment->update([
+                            'transaction_status' => 'REFUNDED',
+                        ]);
+                    }
+
+                    return $responseData;
+                });
             }
 
             throw new RefundException(
