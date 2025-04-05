@@ -162,13 +162,13 @@ php artisan vendor:publish --tag="bkash-config"
 
 If you wish to customize the user interface or override the default controllers:
 
-- **Publishing Views:**
+**Publishing Views:**
   ```bash
   php artisan bkash:setup --publish-views
   ```
   This copies the view files to `resources/views/vendor/bkash/`.
 
-- **Publishing Controllers:**
+**Publishing Controllers:**
   ```bash
   php artisan bkash:setup --publish-controllers
   ```
