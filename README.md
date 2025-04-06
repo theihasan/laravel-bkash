@@ -1,6 +1,6 @@
 # Laravel bKash
 
-A Laravel package for integrating the bKash Tokenized Payment Gateway into your Laravel application with ease.
+A simple Laravel package for integrating the bKash Tokenized Payment Gateway into your application. With built-in payment flow and full control via manual methods, this package supports payment creation, execution, status queries, refunds, and token management.
 
 ---
 
@@ -10,41 +10,36 @@ A Laravel package for integrating the bKash Tokenized Payment Gateway into your 
 2. [Requirements](#requirements)
 3. [Installation](#installation)
 4. [Configuration](#configuration)
-5. [Setup and Publishing Assets](#setup-and-publishing-assets)
-6. [Usage](#usage)
-    - [Creating a Payment](#creating-a-payment)
+5. [Usage](#usage)
+    - [Initiating a Payment](#initiating-a-payment)
     - [Handling the Callback](#handling-the-callback)
     - [Querying Payment Status](#querying-payment-status)
-    - [Refunding a Payment](#refunding-a-payment)
-    - [Token Management](#token-management)
-7. [Built-in Payment Flow](#built-in-payment-flow)
-8. [Error Handling](#error-handling)
-9. [Customizing Views and Controllers](#customizing-views-and-controllers)
-10. [Test Credentials](#test-credentials)
-11. [Testing](#testing)
-12. [Contributing](#contributing)
-13. [Credits and License](#credits-and-license)
+    - [Processing a Refund](#processing-a-refund)
+    - [Managing Tokens](#managing-tokens)
+6. [Built-in Payment Flow](#built-in-payment-flow)
+7. [Error Handling](#error-handling)
+8. [Customization](#customization)
+9. [Test Credentials](#test-credentials)
+10. [Testing](#testing)
+11. [Contributing](#contributing)
+12. [Credits and License](#credits-and-license)
 
 ---
 
 ## Overview
 
-The **Laravel bKash** package provides an easy-to-use solution for integrating bKash’s tokenized payment gateway with your Laravel application. It simplifies payment processing including token generation, payment creation, execution, status queries, and refunds.
-
-Key features include:
-
-- Seamless installation via Composer.
-- Quick configuration through published config files.
-- Built-in controllers and routes for an out-of-the-box payment flow.
-- Manual methods for full control over the payment process.
-- Robust and detailed error handling using dedicated exception classes.
+The **Laravel bKash** package simplifies integrating bKash’s tokenized payment gateway into your Laravel projects. It provides:
+- Quick installation and configuration.
+- Built-in controllers, routes, and views for out-of-the-box payment flow.
+- Manual methods for complete control.
+- Detailed error handling through custom exceptions.
 
 ---
 
 ## Requirements
 
-- **PHP:** Minimum version 8.0  
-- **Laravel:** Version greater than 8.x  
+- **PHP:** 8.0 or higher  
+- **Laravel:** 8.x or later  
 - **cURL Extension:** Enabled
 
 ---
@@ -57,20 +52,20 @@ Install the package via Composer:
 composer require theihasan/laravel-bkash
 ```
 
-After installation, run the setup command to test the bKash API connection and to publish views and controllers:
+Then, run the setup command to test the connection and publish assets:
 
 ```bash
 php artisan bkash:setup --test --publish-views --publish-controllers
 ```
 
-Alternatively, you can publish individual assets:
+Alternatively, publish individual assets as needed:
 
-**Migrations:**
+- **Migrations:**  
   ```bash
   php artisan vendor:publish --tag="bkash-migrations"
   php artisan migrate
   ```
-**Configuration:**
+- **Configuration:**  
   ```bash
   php artisan vendor:publish --tag="bkash-config"
   ```
@@ -79,18 +74,10 @@ Alternatively, you can publish individual assets:
 
 ## Configuration
 
-The published configuration file (typically `config/bkash.php`) contains the necessary credentials and settings:
+After publishing, update the `config/bkash.php` file with your bKash credentials and settings:
 
 ```php
 return [
-    /*
-    |--------------------------------------------------------------------------
-    | bKash Credentials
-    |--------------------------------------------------------------------------
-    |
-    | Configure your bKash credentials for the tokenized payment system.
-    |
-    */
     'sandbox' => env('BKASH_SANDBOX', true),
 
     'credentials' => [
@@ -106,83 +93,44 @@ return [
     'version' => 'v1.2.0-beta',
 
     'cache' => [
-        'token_lifetime' => 3600, // Token lifetime in seconds (1 hour)
+        'token_lifetime' => 3600,
     ],
 
     'default_currency' => 'BDT',
     'default_intent'   => 'sale',
-    
-    // Optional redirect URLs for built-in routes:
+
     'redirect_urls' => [
         'success' => '/payment/success',
         'failed'  => '/payment/failed',
     ],
 
-    // Option to disable built-in routes if you want to handle routing manually
     'routes' => [
         'enabled' => true,
     ],
 ];
 ```
 
-Also, add these environment variables to your **.env** file:
+Also, add the necessary variables to your **.env** file:
 
 ```dotenv
 BKASH_SANDBOX=true
-BKASH_APP_KEY='0vWQuCRGiUX7EPVjQDr0EUAYtc'
-BKASH_APP_SECRET='jcUNPBgbcqEDedNKdvE4G1cAK7D3hCjmJccNPZZBq96QIxxwAMEx'
-BKASH_USERNAME='01770618567'
-BKASH_PASSWORD='D7DaC<*E*eG'
+BKASH_APP_KEY=your_app_key
+BKASH_APP_SECRET=your_app_secret
+BKASH_USERNAME=your_username
+BKASH_PASSWORD=your_password
 SANDBOX_BASE_URL=https://tokenized.sandbox.bka.sh
 LIVE_BASE_URL=https://tokenized.pay.bka.sh
 ```
 
 ---
 
-## Setup and Publishing Assets
-
-### Migrations
-
-Publish and run the package migrations:
-
-```bash
-php artisan vendor:publish --tag="bkash-migrations"
-php artisan migrate
-```
-
-### Configuration
-
-Publish the configuration file to customize your settings:
-
-```bash
-php artisan vendor:publish --tag="bkash-config"
-```
-
-### Views and Controllers
-
-If you wish to customize the user interface or override the default controllers:
-
-**Publishing Views:**
-  ```bash
-  php artisan bkash:setup --publish-views
-  ```
-  This copies the view files to `resources/views/vendor/bkash/`.
-
-**Publishing Controllers:**
-  ```bash
-  php artisan bkash:setup --publish-controllers
-  ```
-  Controllers will be published to `app/Http/Controllers/Vendor/Bkash/`. Update namespaces as needed.
-
----
-
 ## Usage
 
-The package can be used in two ways: using the built-in payment flow or implementing a custom flow manually.
+You can use the package with its built-in payment flow or build a custom process.
 
-### Creating a Payment
+### Initiating a Payment
 
-To initiate a payment, use the `createPayment` method in your controller:
+Use the provided `createPayment` method to start a payment:
 
 ```php
 use Ihasan\Bkash\Facades\Bkash;
@@ -191,17 +139,16 @@ public function initiatePayment(Request $request)
 {
     $paymentData = [
         'amount'                  => '100', // Payment amount in BDT
-        'payer_reference'         => 'customer123', // Optional parameter
-        'callback_url'            => route('bkash.callback'), // If you use this as callback route then package will handle your callback automatically otherwise you have to handle your callback.
+        'payer_reference'         => 'customer123',
+        'callback_url'            => route('bkash.callback'),
         'merchant_invoice_number' => 'INV-123456',
     ];
 
     try {
         $response = Bkash::createPayment($paymentData);
-        // Redirect the user to the bKash payment page
+        // Redirect to the bKash payment page
         return redirect()->away($response['bkashURL']);
     } catch (\Exception $e) {
-        // Detailed error handling (see Error Handling section)
         return back()->with('error', $e->getMessage());
     }
 }
@@ -209,34 +156,28 @@ public function initiatePayment(Request $request)
 
 ### Handling the Callback
 
-After a payment is made, bKash redirects to your callback URL. In your callback controller:
+After payment, bKash will redirect to your callback URL:
 
 ```php
 use Ihasan\Bkash\Facades\Bkash;
 
 public function handleCallback(Request $request)
 {
-    $paymentId = $request->input('paymentID');
-    $status    = $request->input('status');
-
-    if ($status === 'success') {
+    if ($request->input('status') === 'success') {
         try {
-            $response = Bkash::executePayment($paymentId);
-            // Payment executed successfully. Redirect as needed.
+            $response = Bkash::executePayment($request->input('paymentID'));
             return redirect()->route('payment.success', ['transaction_id' => $response['trxID']]);
         } catch (\Exception $e) {
             return redirect()->route('payment.failed')->with('error', $e->getMessage());
         }
-    } else {
-        // Handle payment failure or cancellation.
-        return redirect()->route('payment.failed')->with('error', 'Payment was not successful');
     }
+    return redirect()->route('payment.failed')->with('error', 'Payment was not successful');
 }
 ```
 
 ### Querying Payment Status
 
-To check the status of a payment:
+Check a payment’s status using:
 
 ```php
 use Ihasan\Bkash\Facades\Bkash;
@@ -245,24 +186,21 @@ public function queryPaymentStatus($paymentId)
 {
     try {
         $response = Bkash::queryPayment($paymentId);
-        $status   = $response['transactionStatus'];
+        $status = $response['transactionStatus'];
         return response()->json([
             'success' => $status === 'Completed',
             'message' => 'Payment is ' . $status,
             'data'    => $response,
         ]);
     } catch (\Exception $e) {
-        return response()->json([
-            'success' => false,
-            'message' => $e->getMessage(),
-        ], 500);
+        return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
     }
 }
 ```
 
-### Refunding a Payment
+### Processing a Refund
 
-To process a refund (partial or full):
+Initiate a refund (partial or full) with:
 
 ```php
 use Ihasan\Bkash\Facades\Bkash;
@@ -274,181 +212,82 @@ public function refundPayment(Request $request)
         'trx_id'     => $request->input('trx_id'),
         'amount'     => $request->input('amount'),
         'reason'     => $request->input('reason'),
-        // Optionally include 'sku'
     ];
 
     try {
         $response = Bkash::refundPayment($refundData);
-        return response()->json([
-            'success' => true,
-            'message' => 'Refund processed successfully',
-            'data'    => $response,
-        ]);
+        return response()->json(['success' => true, 'message' => 'Refund processed successfully', 'data' => $response]);
     } catch (\Exception $e) {
-        return response()->json([
-            'success' => false,
-            'message' => $e->getMessage(),
-        ], 500);
+        return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
     }
 }
 ```
 
-### Token Management
+### Managing Tokens
 
-For cases when you need to manage tokens manually:
+For manual token operations:
 
-- **Getting a Token:**
-  ```php
-  $token = Bkash::getToken();
-  ```
-- **Refreshing a Token:**
-  ```php
-  $token = Bkash::refreshToken();
-  ```
+```php
+// Get a token
+$token = Bkash::getToken();
+
+// Refresh a token
+$token = Bkash::refreshToken();
+```
 
 ---
 
 ## Built-in Payment Flow
 
-The package includes built-in routes and controllers to streamline the payment process. By default, the following routes are registered:
+By default, the package registers these routes:
+- **GET /bkash/callback** – Payment callback handling.
+- **GET /bkash/success** – Payment success page.
+- **GET /bkash/failed** – Payment failure page.
 
-- `GET /bkash/callback` – Handles the bKash callback.
-- `GET /bkash/success` – Displays the payment success page.
-- `GET /bkash/failed` – Displays the payment failure page.
+To define your own routes, simply disable the built-in ones in `config/bkash.php` by setting:
 
-To use your own routes, disable the built-in ones by setting `'routes' => ['enabled' => false]` in the configuration.
+```php
+'routes' => [
+    'enabled' => false,
+],
+```
 
 ---
 
 ## Error Handling
 
-The package is designed with detailed error handling in mind. Dedicated exception classes help you identify and manage specific error cases:
+The package provides clear exception classes to help you handle errors:
+- **TokenGenerationException:** When token generation fails.
+- **RefreshTokenException:** When token refresh fails.
+- **PaymentCreationException:** When payment creation fails.
+- **PaymentExecutionException:** When executing payment fails.
+- **PaymentQueryException:** When payment status query fails.
+- **RefundException:** When refund processing fails.
 
-1. **TokenGenerationException:**  
-   Thrown when the package fails to generate an authorization token.  
-   *Common causes:*  
-   - Invalid credentials  
-   - Connectivity issues with the bKash API  
-
-   **Example:**
-   ```php
-   try {
-       $token = Bkash::getToken();
-   } catch (\Ihasan\Bkash\Exceptions\TokenGenerationException $e) {
-       // Log or handle token generation failure
-       return back()->with('error', 'Token generation failed: ' . $e->getMessage());
-   }
-   ```
-
-2. **RefreshTokenException:**  
-   Thrown when refreshing the token fails.  
-   *Common causes:*  
-   - Expired refresh token  
-   - API connectivity issues  
-
-   **Example:**
-   ```php
-   try {
-       $token = Bkash::refreshToken();
-   } catch (\Ihasan\Bkash\Exceptions\RefreshTokenException $e) {
-       // Handle token refresh failure
-       return back()->with('error', 'Token refresh failed: ' . $e->getMessage());
-   }
-   ```
-
-3. **PaymentCreationException:**  
-   Thrown if creating a payment fails.  
-   *Common causes:*  
-   - Invalid amount or parameters  
-   - Incorrect callback URL  
-
-   **Example:**
-   ```php
-   try {
-       $response = Bkash::createPayment($paymentData);
-   } catch (\Ihasan\Bkash\Exceptions\PaymentCreationException $e) {
-       // Handle payment creation failure
-       return back()->with('error', 'Payment creation failed: ' . $e->getMessage());
-   }
-   ```
-
-4. **PaymentExecutionException:**  
-   Thrown if executing the payment after user authorization fails.  
-   *Common causes:*  
-   - Payment already executed or cancelled  
-   - Insufficient balance  
-
-   **Example:**
-   ```php
-   try {
-       $response = Bkash::executePayment($paymentId);
-   } catch (\Ihasan\Bkash\Exceptions\PaymentExecutionException $e) {
-       // Handle payment execution failure
-       return redirect()->route('payment.failed')->with('error', 'Payment execution failed: ' . $e->getMessage());
-   }
-   ```
-
-5. **PaymentQueryException:**  
-   Thrown when querying the payment status fails.  
-   *Common causes:*  
-   - Invalid payment ID  
-   - API connectivity issues  
-
-   **Example:**
-   ```php
-   try {
-       $response = Bkash::queryPayment($paymentId);
-   } catch (\Ihasan\Bkash\Exceptions\PaymentQueryException $e) {
-       // Handle payment query failure
-       return response()->json(['error' => 'Payment query failed: ' . $e->getMessage()], 500);
-   }
-   ```
-
-6. **RefundException:**  
-   Thrown if a refund operation fails.  
-   *Common causes:*  
-   - Payment not found  
-   - Refund amount exceeds the payment amount  
-   - Payment already refunded  
-
-   **Example:**
-   ```php
-   try {
-       $response = Bkash::refundPayment($refundData);
-   } catch (\Ihasan\Bkash\Exceptions\RefundException $e) {
-       // Handle refund failure
-       return response()->json(['error' => 'Refund failed: ' . $e->getMessage()], 500);
-   }
-   ```
-
-These detailed error responses allow your application to gracefully handle failures and provide actionable feedback.
+Handle exceptions as shown in the usage examples above.
 
 ---
 
-## Customizing Views and Controllers
+## Customization
 
-To adapt the default UI and controller logic:
-
-- **Publishing Views:**  
-  Run:
+Customize the built-in views and controllers to match your needs:
+- **Views:**  
   ```bash
   php artisan bkash:setup --publish-views
-  ```
-  This copies view files into your project’s `resources/views/vendor/bkash/` directory for customization.
-
-- **Publishing Controllers:**  
-  Run:
+  ```  
+  Files will be copied to `resources/views/vendor/bkash/`.
+  
+- **Controllers:**  
   ```bash
   php artisan bkash:setup --publish-controllers
-  ```
-  Controllers will be copied to `app/Http/Controllers/Vendor/Bkash/`. Adjust namespaces and logic as needed.
+  ```  
+  Controllers will appear in `app/Http/Controllers/Vendor/Bkash/`. Adjust namespaces as needed.
 
 ---
 
 ## Test Credentials
 
-For immediate testing in the sandbox environment, use the following test credentials:
-
+For sandbox testing, you may use these credentials (or update your **.env** accordingly):
 - **Testing Numbers:**  
   - 01929918378  
   - 01619777283  
@@ -457,29 +296,26 @@ For immediate testing in the sandbox environment, use the following test credent
 - **OTP:** 123456  
 - **PIN:** 12121
 
-Add these credentials to your `.env` file or use them as needed for testing your integration.
-
 ---
 
 ## Testing
 
-To run the package tests, execute:
+Run package tests with:
 
 ```bash
 composer test
 ```
 
-Make sure your testing environment is properly configured according to your Laravel setup.
+Ensure your testing environment is set up as required by your Laravel configuration.
 
 ---
 
 ## Contributing
 
-Contributions are welcome! When submitting a pull request, please ensure you:
-
+Contributions are welcome. When submitting a pull request:
 - Follow PSR-4 coding standards.
 - Include tests for new features or bug fixes.
-- Update documentation accordingly.
+- Update the documentation as needed.
 
 ---
 
@@ -487,9 +323,12 @@ Contributions are welcome! When submitting a pull request, please ensure you:
 
 **Credits:**
 
-- Developed by **Md Abul Hassan**
-- Special thanks to contributors including Ahmed Shamim Hasan Shaon.
+- Developed by [theihasan](https://github.com/theihasan)
+- Special thanks to:
+  - [Ahmed Shamim Hassan Shaon](https://github.com/me-shaon) for his invaluable guidance in package development.
+  - [Anis Uddin Ahmed](https://github.com/ajaxray) for his valuable insights and support.
 
-**License:**
+**License:**  
+Licensed under the [MIT License](LICENSE.md).
 
-This project is licensed under the [MIT License](LICENSE.md).
+---
