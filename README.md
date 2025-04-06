@@ -323,7 +323,7 @@ Contributions are welcome. When submitting a pull request:
 
 **Credits:**
 
-- Developed by [theihasan](https://github.com/theihasan)
+- Developed by [Abul Hassan](https://github.com/theihasan)
 - Special thanks to:
   - [Ahmed Shamim Hassan Shaon](https://github.com/me-shaon) for his invaluable guidance in package development.
   - [Anis Uddin Ahmed](https://github.com/ajaxray) for his valuable insights and support.
