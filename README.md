@@ -140,7 +140,7 @@ public function initiatePayment(Request $request)
     $paymentData = [
         'amount'                  => '100', // Payment amount in BDT
         'payer_reference'         => 'customer123',
-        'callback_url'            => route('bkash.callback'),
+        'callback_url'            => route('bkash.callback'), //If you use this built in route then this package will handle your callback automatically otherwise you have to implement your own callback logic. So don't change this to use automatic callback handling
         'merchant_invoice_number' => 'INV-123456',
     ];
 
