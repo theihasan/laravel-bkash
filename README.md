@@ -116,10 +116,10 @@ Also, add the necessary variables to your **.env** file:
 
 ```dotenv
 BKASH_SANDBOX=true
-BKASH_APP_KEY=your_app_key
-BKASH_APP_SECRET=your_app_secret
-BKASH_USERNAME=your_username
-BKASH_PASSWORD=your_password
+BKASH_APP_KEY='0vWQuCRGiUX7EPVjQDr0EUAYtc'
+BKASH_APP_SECRET='jcUNPBgbcqEDedNKdvE4G1cAK7D3hCjmJccNPZZBq96QIxxwAMEx'
+BKASH_USERNAME='01770618567'
+BKASH_PASSWORD='D7DaC<*E*eG'
 SANDBOX_BASE_URL=https://tokenized.sandbox.bka.sh
 LIVE_BASE_URL=https://tokenized.pay.bka.sh
 ```
