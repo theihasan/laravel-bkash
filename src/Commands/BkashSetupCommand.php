@@ -9,11 +9,7 @@ use Illuminate\Support\Facades\Schema;
 
 class BkashSetupCommand extends Command
 {
-    protected $signature = 'bkash:setup
-                            {--test : Test the connection to bKash API}
-                            {--publish-views : Publish the views for customization}
-                            {--publish-controllers : Publish the controllers for customization}';
-
+    protected $signature = 'bkash:setup {--test} {--publish-views} {--publish-controllers}';
     protected $description = 'Set up bKash integration';
 
     public function handle()
