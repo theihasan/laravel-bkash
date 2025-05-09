@@ -75,6 +75,16 @@ class BkashServiceProvider extends PackageServiceProvider
                 __DIR__.'/Http/Controllers' => app_path('Http/Controllers/Vendor/Bkash'),
             ], 'bkash-controllers');
 
+            $this->publishes([
+                __DIR__.'/../config/bkash.php' => config_path('bkash.php'),
+            ], 'config');
+
+            $this->publishes([
+                __DIR__.'/../database/migrations/create_bkash_payments_table.php.stub' => $this->getMigrationFileName('create_bkash_payments_table.php'),
+                __DIR__.'/../database/migrations/create_bkash_refunds_table.php.stub' => $this->getMigrationFileName('create_bkash_refunds_table.php'),
+                __DIR__.'/../database/migrations/update_bkash_tables_with_prefix.php.stub' => $this->getMigrationFileName('update_bkash_tables_with_prefix.php'),
+            ], 'migrations');
+
         }
     }
 

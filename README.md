@@ -287,6 +287,52 @@ Customize the built-in views and controllers to match your needs:
 
 ---
 
+## Database Configuration
+
+Starting from version 1.1.0, you can customize the database table prefix used by the package. This is useful when you want to avoid table name conflicts or organize your database schema.
+
+### Setting a Custom Table Prefix
+
+By default, all tables created by this package use the `bkash_` prefix. You can change this by updating your `.env` file:
+
+```dotenv
+BKASH_TABLE_PREFIX=custom_prefix_
+```
+
+Or by directly modifying the `config/bkash.php` file:
+
+```php
+'database' => [
+    'table_prefix' => env('BKASH_TABLE_PREFIX', 'bkash_'),
+],
+```
+
+### For Existing Installations
+
+If you're updating from a previous version and want to use a custom table prefix:
+
+1. Publish the new migration file:
+   ```bash
+   php artisan vendor:publish --tag="bkash-migrations"
+   ```
+
+2. Set your desired prefix in the `.env` file or config file.
+
+3. Run the migration to create new tables with your prefix and migrate existing data:
+   ```bash
+   php artisan migrate
+   ```
+
+> **Note:** The migration will automatically copy your existing data to the new tables with your custom prefix. Your original tables will remain untouched, so you can verify the data before removing the old tables if needed.
+
+### Important Considerations
+
+- Changing the table prefix after you've already been using the package will create new tables with the new prefix.
+- The package will automatically use the tables with the configured prefix.
+- If you're using direct database queries in your application that reference these tables, make sure to update those queries to use the new table names.
+
+---
+
 ## Test Credentials
 
 For sandbox testing, you may use these credentials (or update your **.env** accordingly):

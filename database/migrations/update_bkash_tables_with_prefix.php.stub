@@ -3,12 +3,17 @@
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\DB;
 
 return new class extends Migration
 {
     public function up()
     {
         $prefix = config('bkash.database.table_prefix', 'bkash_');
+
+        if ($prefix === 'bkash_' || !Schema::hasTable('bkash_payments') || Schema::hasTable($prefix . 'payments')) {
+            return;
+        }
 
         Schema::create($prefix . 'payments', function (Blueprint $table) {
              $table->id();
@@ -30,11 +35,43 @@ return new class extends Migration
              $table->string('status_message')->nullable();
              $table->timestamps();
         });
+
+        Schema::create($prefix . 'refunds', function (Blueprint $table) {
+            $table->id();
+            $table->string('payment_id');
+            $table->string('original_trx_id');
+            $table->string('refund_trx_id')->unique();
+            $table->decimal('amount', 10, 2);
+            $table->string('currency')->default('BDT');
+            $table->string('transaction_status');
+            $table->timestamp('completed_time')->nullable();
+            $table->string('reason')->nullable();
+            $table->timestamps();
+
+           $table->foreign('payment_id')
+                 ->references('payment_id')
+                 ->on($prefix . 'payments')
+                 ->cascadeOnDelete();
+        });
+
+        if (Schema::hasTable('bkash_payments')) {
+            DB::statement("INSERT INTO {$prefix}payments SELECT * FROM bkash_payments");
+        }
+
+        if (Schema::hasTable('bkash_refunds')) {
+            DB::statement("INSERT INTO {$prefix}refunds SELECT * FROM bkash_refunds");
+        }
     }
 
     public function down()
     {
         $prefix = config('bkash.database.table_prefix', 'bkash_');
+
+        if ($prefix === 'bkash_') {
+            return;
+        }
+
+        Schema::dropIfExists($prefix . 'refunds');
         Schema::dropIfExists($prefix . 'payments');
     }
 };

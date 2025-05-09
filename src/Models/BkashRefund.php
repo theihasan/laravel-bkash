@@ -22,6 +22,14 @@ class BkashRefund extends Model
         'completed_time' => 'datetime',
     ];
 
+    public function __construct(array $attributes = [])
+    {
+        parent::__construct($attributes);
+
+        $prefix = config('bkash.database.table_prefix', 'bkash_');
+        $this->setTable($prefix . 'refunds');
+    }
+
     /**
      * Get the payment that was refunded.
      */

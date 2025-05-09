@@ -32,6 +32,13 @@ class BkashPayment extends Model
         'agreement_execute_time' => 'datetime',
     ];
 
+    public function __construct(array $attributes = [])
+    {
+        parent::__construct($attributes);
+        $prefix = config('bkash.database.table_prefix', 'bkash_');
+        $this->setTable($prefix . 'payments');
+    }
+
     /**
      * Get the refunds for the payment.
      */
