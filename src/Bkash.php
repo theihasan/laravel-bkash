@@ -220,6 +220,10 @@ class Bkash
                         'status_code' => $data['statusCode'],
                         'status_message' => $data['statusMessage'],
                     ]);
+                    if (config('bkash.events.payment_success', true)) {
+                        event(new PaymentSuccessful($payment->fresh(), $data));
+                    }
+
                 }
 
                 return $data;

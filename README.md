@@ -333,6 +333,88 @@ If you're updating from a previous version and want to use a custom table prefix
 
 ---
 
+## Events
+
+Starting from version 1.1.0, the package can fire Laravel events when certain actions occur. You can listen for these events to perform additional actions in your application.
+
+### Available Events
+
+#### Payment Successful Event
+
+This event is fired when a payment is successfully executed:
+
+```php
+Ihasan\Bkash\Events\PaymentSuccessful
+```
+
+The event contains:
+- `$payment` - The BkashPayment model instance
+- `$paymentData` - The raw payment data from bKash
+
+### Configuring Events
+
+By default, all events are enabled. You can disable specific events in your `.env` file:
+
+```dotenv
+BKASH_FIRE_PAYMENT_SUCCESS_EVENT=false
+```
+
+Or in your `config/bkash.php` file:
+
+```php
+'events' => [
+    'payment_success' => false,
+],
+```
+
+### Listening for Events
+
+You can listen for these events in your `EventServiceProvider`:
+
+```php
+protected $listen = [
+    \Ihasan\Bkash\Events\PaymentSuccessful::class => [
+        \App\Listeners\HandleSuccessfulPayment::class,
+    ],
+];
+```
+
+Example listener:
+
+```php
+namespace App\Listeners;
+
+use Ihasan\Bkash\Events\PaymentSuccessful;
+use Illuminate\Contracts\Queue\ShouldQueue;
+
+class HandleSuccessfulPayment implements ShouldQueue
+{
+    public function handle(PaymentSuccessful $event)
+    {
+        $payment = $event->payment;
+        $paymentData = $event->paymentData;
+        
+        // Your custom logic here
+        // For example, update order status, send notification, etc.
+    }
+}
+```
+```
+
+## 5. Create a Service Provider Method to Register Events
+
+If you have a service provider for your package, make sure to register the events:
+
+```php:src/BkashServiceProvider.php
+// In the boot method of your service provider
+protected function bootEvents()
+{
+    // You don't need to explicitly register the event here
+    // Laravel will automatically discover and register the event class
+    // This method is just a placeholder in case you need to add more event-related logic
+}
+```
+
 ## Test Credentials
 
 For sandbox testing, you may use these credentials (or update your **.env** accordingly):
