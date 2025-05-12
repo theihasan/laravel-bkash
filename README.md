@@ -53,7 +53,14 @@ Install the package via Composer:
 ```bash
 composer require theihasan/laravel-bkash
 ```
-
+Publish the migrations
+```php
+php artisan vendor:publish --tag=bkash-migrations
+```
+Migrate the database
+```php
+php artisan migrate
+```
 Then, run the setup command to test the connection and publish assets:
 
 ```bash
@@ -61,12 +68,6 @@ php artisan bkash:setup --test --publish-views --publish-controllers
 ```
 
 Alternatively, publish individual assets as needed:
-
-- **Migrations:**  
-  ```bash
-  php artisan vendor:publish --tag="bkash-migrations"
-  php artisan migrate
-  ```
 - **Configuration:**  
   ```bash
   php artisan vendor:publish --tag="bkash-config"
@@ -108,6 +109,25 @@ return [
 
     'routes' => [
         'enabled' => true,
+    ],
+    
+        /*
+    |--------------------------------------------------------------------------
+    | Event Configuration
+    |--------------------------------------------------------------------------
+    | Configure whether to fire events on successful payments
+    */
+    'events' => [
+        'payment_success' => env('BKASH_FIRE_PAYMENT_SUCCESS_EVENT', true),
+    ],
+    
+        /*
+    |--------------------------------------------------------------------------
+    | Database Configuration
+    |--------------------------------------------------------------------------
+    */
+    'database' => [
+        'table_prefix' => env('BKASH_TABLE_PREFIX', 'bkash_'),
     ],
 ];
 ```
