@@ -398,6 +398,10 @@ protected $listen = [
     ],
 ];
 ```
+Or if you are using Laravel 11 or higher Laravel will automatically register the listener. Just run this command for listener
+```bash
+php artisan make:listener SendBkashPaymentNotification --event=PaymentSuccessful
+```
 
 Example listener:
 
@@ -417,21 +421,6 @@ class HandleSuccessfulPayment implements ShouldQueue
         // Your custom logic here
         // For example, update order status, send notification, etc.
     }
-}
-```
-```
-
-## 5. Create a Service Provider Method to Register Events
-
-If you have a service provider for your package, make sure to register the events:
-
-```php:src/BkashServiceProvider.php
-// In the boot method of your service provider
-protected function bootEvents()
-{
-    // You don't need to explicitly register the event here
-    // Laravel will automatically discover and register the event class
-    // This method is just a placeholder in case you need to add more event-related logic
 }
 ```
 
