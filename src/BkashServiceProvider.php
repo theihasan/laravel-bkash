@@ -88,6 +88,13 @@ class BkashServiceProvider extends PackageServiceProvider
         }
     }
 
+    protected function getMigrationFileName($migrationFileName): string
+    {
+        $timestamp = date('Y_m_d_His');
+
+        return database_path('migrations/' . $timestamp . '_' . $migrationFileName);
+    }
+
     protected function registerRoutes(): void
     {
         if (config('bkash.routes.enabled', true)) {
