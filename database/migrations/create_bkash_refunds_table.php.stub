@@ -8,9 +8,7 @@ return new class extends Migration
 {
     public function up()
     {
-        $prefix = config('bkash.database.table_prefix', 'bkash_');
-
-        Schema::create($prefix . 'refunds', function (Blueprint $table) {
+        Schema::create(config('bkash.database.table_prefix', 'bkash_') . 'refunds', function (Blueprint $table) {
             $table->id();
             $table->string('payment_id');
             $table->string('original_trx_id');
@@ -24,14 +22,13 @@ return new class extends Migration
 
            $table->foreign('payment_id')
                  ->references('payment_id')
-                 ->on($prefix . 'payments')
+                 ->on(config('bkash.database.table_prefix', 'bkash_') . 'payments')
                  ->cascadeOnDelete();
         });
     }
 
     public function down()
     {
-        $prefix = config('bkash.database.table_prefix', 'bkash_');
-        Schema::dropIfExists($prefix . 'refunds');
+        Schema::dropIfExists(config('bkash.database.table_prefix', 'bkash_') . 'refunds');
     }
 };
