@@ -177,7 +177,7 @@ public function initiatePayment(Request $request)
 ```
 ## Multi-tenant Support
 
-Starting from version 1.3.1, the package supports multi-tenant applications. This is useful when you have multiple tenants (organizations, businesses, etc.) using the same application but with different bKash credentials.
+Starting from version 1.3.0, the package supports multi-tenant applications. This is useful when you have multiple tenants (organizations, businesses, etc.) using the same application but with different bKash credentials.
 
 ```php
 use Ihasan\Bkash\Facades\Bkash;
