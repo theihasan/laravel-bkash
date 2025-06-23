@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Facade;
 /**
  * @see \Ihasan\Bkash\Bkash
  *
+ * @method static \Ihasan\Bkash\Bkash forTenant(string $tenantId)
  * @method static string getToken()
  * @method static string refreshToken()
  * @method static array createPayment(array $data)

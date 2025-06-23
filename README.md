@@ -175,6 +175,31 @@ public function initiatePayment(Request $request)
     }
 }
 ```
+## Multi-tenant Support
+
+Starting from version 1.3.1, the package supports multi-tenant applications. This is useful when you have multiple tenants (organizations, businesses, etc.) using the same application but with different bKash credentials.
+
+```php
+use Ihasan\Bkash\Facades\Bkash;
+
+public function initiatePayment(Request $request)
+{
+    $paymentData = [
+        'amount'                  => '100', // Payment amount in BDT
+        'payer_reference'         => 'customer123',
+        'callback_url'            => route('bkash.callback'), //If you use this built in route then this package will handle your callback automatically otherwise you have to implement your own callback logic. So don't change this to use automatic callback handling
+        'merchant_invoice_number' => 'INV-123456',
+    ];
+
+    try {
+        $response = Bkash::forTenant($tenantId)->createPayment($paymentData);
+        // Redirect to the bKash payment page
+        return redirect()->away($response['bkashURL']);
+    } catch (\Exception $e) {
+        return back()->with('error', $e->getMessage());
+    }
+}
+```
 
 ### Handling the Callback
 
@@ -197,8 +222,6 @@ public function handleCallback(Request $request)
 }
 ```
 
-### Querying Payment Status
-
 Check a payment’s status using:
 
 ```php
@@ -219,7 +242,26 @@ public function queryPaymentStatus($paymentId)
     }
 }
 ```
+## Multi-tenant Support
 
+```php
+use Ihasan\Bkash\Facades\Bkash;
+
+public function queryPaymentStatus($paymentId)
+{
+    try {
+        $response = Bkash::forTenant($tenantId)->queryPayment($paymentId);
+        $status = $response['transactionStatus'];
+        return response()->json([
+            'success' => $status === 'Completed',
+            'message' => 'Payment is ' . $status,
+            'data'    => $response,
+        ]);
+    } catch (\Exception $e) {
+        return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+    }
+}
+```
 ### Processing a Refund
 
 Initiate a refund (partial or full) with:
@@ -244,6 +286,28 @@ public function refundPayment(Request $request)
     }
 }
 ```
+## Multi-tenant Support
+
+```php
+use Ihasan\Bkash\Facades\Bkash;
+
+public function refundPayment(Request $request)
+{
+    $refundData = [
+        'payment_id' => $request->input('payment_id'),
+        'trx_id'     => $request->input('trx_id'),
+        'amount'     => $request->input('amount'),
+        'reason'     => $request->input('reason'),
+    ];
+
+    try {
+        $response = Bkash::forTenant($tenantId)->refundPayment($refundData);
+        return response()->json(['success' => true, 'message' => 'Refund processed successfully', 'data' => $response]);
+    } catch (\Exception $e) {
+        return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+    }
+}
+```
 
 ### Managing Tokens
 
@@ -258,6 +322,22 @@ $token = Bkash::refreshToken();
 ```
 
 ---
+
+## Multi-tenant Support
+
+### Token Management
+
+Tokens are tenant-specific, so you can manage them for each tenant:
+
+```php
+use Ihasan\Bkash\Facades\Bkash;
+
+// Get a token for a tenant
+$token = Bkash::forTenant($tenantId)->getToken();
+
+// Refresh a token for a tenant
+$token = Bkash::forTenant($tenantId)->refreshToken();
+```
 
 ## Built-in Payment Flow
 
@@ -471,3 +551,34 @@ Contributions are welcome. When submitting a pull request:
 Licensed under the [MIT License](LICENSE.md).
 
 ---
+
+## Multi-tenant Support
+
+Starting from version X.X.X, the package supports multi-tenant applications. This is useful when you have multiple tenants (organizations, businesses, etc.) using the same application but with different bKash credentials.
+
+### Using with Multiple Tenants
+
+The package provides a `forTenant()` method that allows you to specify which tenant's token should be used for a particular operation:
+
+```php
+use Ihasan\Bkash\Facades\Bkash;
+
+// For tenant with ID 'tenant-123'
+public function initiatePaymentForTenant($tenantId)
+{
+    $paymentData = [
+        'amount' => '100',
+        'payer_reference' => 'customer123',
+        'callback_url' => route('bkash.callback'),
+        'merchant_invoice_number' => 'INV-123456',
+    ];
+
+    try {
+        // Use the forTenant method to specify which tenant's token to use
+        $response = Bkash::forTenant($tenantId)->createPayment($paymentData);
+        return redirect()->away($response['bkashURL']);
+    } catch (\Exception $e) {
+        return back()->with('error', $e->getMessage());
+    }
+}
+```

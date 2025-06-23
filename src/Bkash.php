@@ -18,10 +18,38 @@ use Illuminate\Support\Facades\DB;
 class Bkash
 {
     protected array $credentials;
+    protected ?string $tenantId = null;
 
     public function __construct()
     {
         $this->credentials = config('bkash.credentials');
+    }
+
+    /**
+     * Set the tenant ID for multi-tenant applications
+     *
+     * @param string $tenantId
+     * @return $this
+     */
+    public function forTenant(string $tenantId): self
+    {
+        $this->tenantId = $tenantId;
+        return $this;
+    }
+
+    /**
+     * Get the cache key with tenant prefix if available
+     *
+     * @param string $key
+     * @return string
+     */
+    protected function getCacheKey(string $key): string
+    {
+        if ($this->tenantId) {
+            return "tenant_{$this->tenantId}_{$key}";
+        }
+        
+        return $key;
     }
 
     /**
@@ -31,7 +59,7 @@ class Bkash
      */
     public function getToken(): string
     {
-        $cacheKey = 'bkash_token';
+        $cacheKey = $this->getCacheKey('bkash_token');
 
         if (Cache::has($cacheKey)) {
             return Cache::get($cacheKey);
@@ -57,7 +85,7 @@ class Bkash
                 Cache::put($cacheKey, $token, now()->addSeconds($expiresIn));
 
                 if (isset($data['refresh_token'])) {
-                    Cache::put('bkash_refresh_token', $data['refresh_token'], now()->addDays(30));
+                    Cache::put($this->getCacheKey('bkash_refresh_token'), $data['refresh_token'], now()->addDays(30));
                 }
 
                 return $token;
@@ -83,7 +111,7 @@ class Bkash
      */
     public function refreshToken(): string
     {
-        $refreshToken = Cache::get('bkash_refresh_token');
+        $refreshToken = Cache::get($this->getCacheKey('bkash_refresh_token'));
 
         if (! $refreshToken) {
             return $this->getToken();
@@ -107,10 +135,10 @@ class Bkash
                 $token = $data['id_token'];
                 $expiresIn = $data['expires_in'] ?? config('bkash.cache.token_lifetime');
 
-                Cache::put('bkash_token', $token, now()->addSeconds($expiresIn));
+                Cache::put($this->getCacheKey('bkash_token'), $token, now()->addSeconds($expiresIn));
 
                 if (isset($data['refresh_token'])) {
-                    Cache::put('bkash_refresh_token', $data['refresh_token'], now()->addDays(30));
+                    Cache::put($this->getCacheKey('bkash_refresh_token'), $data['refresh_token'], now()->addDays(30));
                 }
 
                 return $token;
