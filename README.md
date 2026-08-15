@@ -276,6 +276,7 @@ public function refundPayment(Request $request)
         'trx_id'     => $request->input('trx_id'),
         'amount'     => $request->input('amount'),
         'reason'     => $request->input('reason'),
+        'sku'        => $request->input('sku'),
     ];
 
     try {
